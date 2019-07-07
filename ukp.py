@@ -1,4 +1,5 @@
 import sys
+import time
 
 class ukp:
     capacity = 0
@@ -22,13 +23,13 @@ class rowtwin:
         self.obj = obj
 
 class ukp_solution:
-    def __init__(self, objs, total):
+    def __init__(self, taken, ttimes, total):
         self.total = total
-        self.objs = objs
+        self.taken = taken
+        self.ttimes = ttimes
 
 def ukp_dno(ukp_obj):
     twins = []
-    taken = []
     ukp_obj.validate()
 
     for i in range(0, len(ukp_obj.p)):
@@ -45,6 +46,9 @@ def ukp_dno(ukp_obj):
     current_obj = twins[current_obj_i].obj
     cont = True
 
+    taken = []
+    ttimes = []
+
     while current_capacity > 0 and cont:
         if (ukp_obj.w[current_obj] > current_capacity):
             if ++current_obj_i < len(ukp_obj.p):
@@ -53,18 +57,26 @@ def ukp_dno(ukp_obj):
             else:
                 cont = False
                 continue
+        if not current_obj in taken:
+            taken.append(current_obj)
+            ttimes.insert(current_obj, 1)
+        else :
+            ttimes[current_obj] += 1
 
-        taken.append(current_obj)
         total_profit += ukp_obj.p[current_obj]
         current_capacity -= ukp_obj.w[current_obj]
 
-    return ukp_solution(taken, total_profit)
+    return ukp_solution(taken, ttimes, total_profit)
 
 
 # main
 instance = ukp(10, [5, 6, 7, 8], [1, 2, 3, 4])
-solution = ukp_dno(instance)
 
+start = time.localtime()
+solution = ukp_dno(instance)
+end = time.localtime()
+
+print ("Executed in " + str(end.tm_sec - start.tm_sec) + " secs")
 print ("Total profit = " + str(solution.total))
-for obj in solution.objs:
-    print (str(obj) + " ")
+for i in range(0, len(solution.taken)):
+    print (str(solution.taken[i]) + ":" + str(solution.ttimes[i]))
