@@ -1,6 +1,8 @@
 import sys
 import time
 
+# This is the class that contains the information
+# of an instance : capacity, weights list and profits list
 class ukp:
     capacity = 0
     p = []  # Profits Array
@@ -17,17 +19,25 @@ class ukp:
             "Validation error"
             sys.exit()
 
+# This is useful when you need a pair of
+# (value, object) in your algorithm
 class rowtwin:
     def __init__(self, obj, row):
         self.row = row
         self.obj = obj
 
+# This is what all the algorithms must return
+# the total profit, the list of taken objects
+# and the list that contains how many times
+# each object has been taken
 class ukp_solution:
     def __init__(self, taken, ttimes, total):
         self.total = total
         self.taken = taken
         self.ttimes = ttimes
 
+# Density ordered heuristic, it takes a ukp object as parameter
+# and return a ukp_solution
 def ukp_dno(ukp_obj):
     twins = []
     ukp_obj.validate()
