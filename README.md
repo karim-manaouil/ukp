@@ -9,3 +9,8 @@ Heuristics and meta-heursitics used: <br>
 3- Simulated Annealing meta-heuristic \
 4- Genetic Algorithm (\*) \
 5- Ant Colony Algorithm
+
+<br><br>
+Note for contributors:\
+The lines ended with (\*) means they are already implemented or being contributed by another person. \
+When you wish to contribute then, please, fork a new branch give it the name of the algorithm you are trying to implement and once finished commit the changes and raise a pull request to the master.
