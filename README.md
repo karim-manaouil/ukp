@@ -6,8 +6,8 @@ Heuristics and meta-heursitics used: <br>
 2- Density-Ordered heuristic (\*)\
 3- Density-Ordered extended heuristic \
 4- Total value heuristic (\*)\
-5- Simulated Annealing meta-heuristic \
-6- Genetic Algorithm (\*) \
+5- Simulated Annealing meta-heuristic (\*) \
+6- Genetic Algorithm \
 7- Ant Colony Algorithm
 
 <br><br>
