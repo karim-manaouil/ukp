@@ -31,10 +31,19 @@ class rowtwin:
 # and the list that contains how many times
 # each object has been taken
 class ukp_solution:
-    def __init__(self, taken, ttimes, total):
-        self.total = total
-        self.taken = taken
-        self.ttimes = ttimes
+    def __init__(self):
+        self.total = 0
+        self.taken = []
+        self.ttimes = []
+
+# This method inserts an object into the solutions structure
+def ukp_select_object (ukp_solution_o, object):
+        if not object in ukp_solution_o.taken:
+            ukp_solution_o.taken.append(object)
+            ukp_solution_o.ttimes.insert(object, 1)
+        else :
+            ukp_solution_o.ttimes[object] += 1
+
 
 # Density ordered heuristic, it takes a ukp object as parameter
 # and return a ukp_solution
@@ -56,37 +65,72 @@ def ukp_dno(ukp_obj):
     current_obj = twins[current_obj_i].obj
     cont = True
 
-    taken = []
-    ttimes = []
+    ukp_sol_o = ukp_solution()
 
     while current_capacity > 0 and cont:
         if (ukp_obj.w[current_obj] > current_capacity):
             if ++current_obj_i < len(ukp_obj.p):
                 current_obj = twins[current_obj_i].obj
-                continue
             else:
                 cont = False
-                continue
-        if not current_obj in taken:
-            taken.append(current_obj)
-            ttimes.insert(current_obj, 1)
-        else :
-            ttimes[current_obj] += 1
+            continue
 
-        total_profit += ukp_obj.p[current_obj]
+        ukp_select_object(ukp_sol_o, current_obj)
+        ukp_sol_o.total += ukp_obj.p[current_obj]
         current_capacity -= ukp_obj.w[current_obj]
 
-    return ukp_solution(taken, ttimes, total_profit)
+    return ukp_sol_o
+
+# total value heuristic
+def ukp_tv(ukp_object):
+    ukp_object.validate()
+    cc = ukp_object.capacity # left capacity in each iteration
+
+    rem_objects = list(range(0, len(ukp_object.p))) # Remaining objects
+    ukp_sol_o = ukp_solution()
+
+    while (cc > 0 and len(rem_objects) > 0):
+        max_metric = 0; selected = -1
+        for object in rem_objects:
+            metric = ukp_object.p[object] * int(cc/ukp_object.w[object])
+            if metric > max_metric:
+                max_metric = metric
+                selected = object
+
+        cc = cc - ukp_object.w[selected]
+        if cc < 0:
+            break
+
+        ukp_select_object(ukp_sol_o, selected)
+        ukp_sol_o.total += ukp_object.p[selected]
+        rem_objects.remove(selected)
+
+    return ukp_sol_o
+
+
+def execute_instance(type, ukp_o):
+    start = time.localtime()
+
+    if type == "ukp_dno":
+        solution = ukp_dno(ukp_o)
+    elif type == "ukp_tv":
+        solution = ukp_tv(ukp_o)
+    else :
+        return
+
+    end = time.localtime()
+
+    print (type)
+    print ("Executed in " + str(end.tm_sec - start.tm_sec) + " secs")
+    print ("Total profit = " + str(solution.total))
+    print ("chosen objects:times")
+    for i in range(0, len(solution.taken)):
+        print(str(solution.taken[i]) + ":" + str(solution.ttimes[i]))
 
 
 # main
 instance = ukp(10, [5, 6, 7, 8], [1, 2, 3, 4])
 
-start = time.localtime()
-solution = ukp_dno(instance)
-end = time.localtime()
-
-print ("Executed in " + str(end.tm_sec - start.tm_sec) + " secs")
-print ("Total profit = " + str(solution.total))
-for i in range(0, len(solution.taken)):
-    print (str(solution.taken[i]) + ":" + str(solution.ttimes[i]))
+execute_instance("ukp_dno", instance)
+print ("\n")
+execute_instance("ukp_tv", instance)
