@@ -2,7 +2,7 @@
 Unbounded Knapsack optimization problem solved with meta-heuristics
 
 Heuristics and meta-heursitics used: <br>
-1- Weight-Ordered heuristic \
+1- Weight-Ordered heuristic (\*)\
 2- Density-Ordered heuristic (\*)\
 3- Density-Ordered extended heuristic \
 4- Total value heuristic (\*)\

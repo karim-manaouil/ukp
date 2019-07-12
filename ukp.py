@@ -1,8 +1,16 @@
 import sys
 import time
+#class objet
+class objet:
+    profit = 0
+    weight = 0
+    def __init__(self, profit, weight):
+        self.weight = weight
+        self.profit = profit
 
 # This is the class that contains the information
 # of an instance : capacity, weights list and profits list
+
 class ukp:
     capacity = 0
     p = []  # Profits Array
@@ -42,7 +50,7 @@ def ukp_select_object (ukp_solution_o, object):
             ukp_solution_o.taken.append(object)
             ukp_solution_o.ttimes.insert(object, 1)
         else :
-            ukp_solution_o.ttimes[object] += 1
+            ukp_solution_o.ttimes[object-1] += 1
 
 
 # Density ordered heuristic, it takes a ukp object as parameter
@@ -92,6 +100,7 @@ def ukp_tv(ukp_object):
     while (cc > 0 and len(rem_objects) > 0):
         max_metric = 0; selected = -1
         for object in rem_objects:
+            print(rem_objects)
             metric = ukp_object.p[object] * int(cc/ukp_object.w[object])
             if metric > max_metric:
                 max_metric = metric
@@ -108,6 +117,30 @@ def ukp_tv(ukp_object):
     return ukp_sol_o
 
 
+#Weight-Ordered heuristic solution
+def ukp_wo(ukp_object):
+    ukp_object.validate()
+    cc = ukp_object.capacity # left capacity in each iteration
+    temp = ukp_object.w.copy()
+    index = list(range(0, len(ukp_object.p)))  # index des objets trie
+    #ordonner l index du tableau
+    ukp_sol_o = ukp_solution()
+    #organiser l index
+    for iter_num in range(len(ukp_object.w) - 1, 0, -1):
+        for idx in range(iter_num):
+            if temp[idx] > temp[idx + 1]:
+                temp[idx], temp[idx + 1] = temp[idx+1], temp[idx]
+                index[idx], index[idx + 1] = index[idx+1], index[idx]
+    i = 0
+    while cc > 0 and i < len(ukp_object.w):
+        if ukp_object.w[index[i]] < cc:
+            ukp_select_object(ukp_sol_o, index[i])
+            ukp_sol_o.total += ukp_object.p[index[i]]
+            cc -= ukp_object.w[index[i]]
+        else:
+            i = i+1
+    return ukp_sol_o
+
 def execute_instance(type, ukp_o):
     start = time.localtime()
 
@@ -115,7 +148,9 @@ def execute_instance(type, ukp_o):
         solution = ukp_dno(ukp_o)
     elif type == "ukp_tv":
         solution = ukp_tv(ukp_o)
-    else :
+    elif type =="ukp_wo":
+       solution = ukp_wo(ukp_o)
+    else:
         return
 
     end = time.localtime()
@@ -129,8 +164,7 @@ def execute_instance(type, ukp_o):
 
 
 # main
-instance = ukp(10, [5, 6, 7, 8], [1, 2, 3, 4])
+instance = ukp(10, [5, 6, 7, 8], [9,4, 5, 6])
 
-execute_instance("ukp_dno", instance)
-print ("\n")
-execute_instance("ukp_tv", instance)
+#execute_instance("ukp_dno", instance)
+execute_instance("ukp_wo", instance)
