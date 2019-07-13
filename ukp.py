@@ -1,5 +1,6 @@
 import sys
 import time
+
 #class objet
 class objet:
     profit = 0
@@ -48,9 +49,9 @@ class ukp_solution:
 def ukp_select_object (ukp_solution_o, object):
         if not object in ukp_solution_o.taken:
             ukp_solution_o.taken.append(object)
-            ukp_solution_o.ttimes.insert(object, 1)
+            ukp_solution_o.ttimes.insert(object+1, 1)
         else :
-            ukp_solution_o.ttimes[object-1] += 1
+            ukp_solution_o.ttimes[object] += 1
 
 
 # Density ordered heuristic, it takes a ukp object as parameter
@@ -140,6 +141,11 @@ def ukp_wo(ukp_object):
         else:
             i = i+1
     return ukp_sol_o
+
+# Genetic Algorithm
+def upk_ga(ukp_obj):
+    ukp_bin
+    generate_binary_population()
 
 def execute_instance(type, ukp_o):
     start = time.localtime()
