@@ -1,5 +1,6 @@
 import sys
 import time
+from random import randrange
 
 #class objet
 class objet:
@@ -16,6 +17,7 @@ class ukp:
     capacity = 0
     p = []  # Profits Array
     w = []  # Weights Array
+    rep = [] # [C/Wi] to binarize ukp
 
     def __init__(self, capacity, p, w):
         self.capacity = capacity
@@ -42,17 +44,16 @@ class rowtwin:
 class ukp_solution:
     def __init__(self):
         self.total = 0
+        self.tw = 0  # Total weight
         self.taken = []
         self.ttimes = []
 
 # This method inserts an object into the solutions structure
 def ukp_select_object (ukp_solution_o, object):
-        if not object in ukp_solution_o.taken:
-            ukp_solution_o.taken.append(object)
-            ukp_solution_o.ttimes.insert(object+1, 1)
-        else :
-            ukp_solution_o.ttimes[object] += 1
+    ukp_solution_o.taken.append(object)
 
+
+############################# Density Oredered Heuristic #############################
 
 # Density ordered heuristic, it takes a ukp object as parameter
 # and return a ukp_solution
@@ -90,6 +91,11 @@ def ukp_dno(ukp_obj):
 
     return ukp_sol_o
 
+############################# End of Density Oredered Heuristic #############################
+
+
+############################# Total Oredered Heuristic #############################
+
 # total value heuristic
 def ukp_tv(ukp_object):
     ukp_object.validate()
@@ -118,7 +124,12 @@ def ukp_tv(ukp_object):
     return ukp_sol_o
 
 
-#Weight-Ordered heuristic solution
+############################# End of Total Oredered Heuristic #############################
+
+
+############################# Weight Oredered Heuristic #############################
+
+# Weight-Ordered heuristic solution
 def ukp_wo(ukp_object):
     ukp_object.validate()
     cc = ukp_object.capacity # left capacity in each iteration
@@ -142,10 +153,204 @@ def ukp_wo(ukp_object):
             i = i+1
     return ukp_sol_o
 
-# Genetic Algorithm
-def upk_ga(ukp_obj):
-    ukp_bin
-    generate_binary_population()
+############################# End of Weight Oredered Heuristic #############################
+
+
+############################# Genetic Algorithm #############################
+
+def ukp_ga(ukp_obj, times, mutation_percentage):
+
+    ukp_obj_bin = ukp_binarize(ukp_obj)
+
+    OIndex = create_ordered_index(ukp_obj_bin)
+
+    s1 = generate_random_population (ukp_obj_bin)
+    s2 = generate_random_population (ukp_obj_bin)
+
+    time = 0
+    while time < times :
+
+        fs1 = get_fitness_of(ukp_obj_bin, s1)
+        fs2 = get_fitness_of(ukp_obj_bin, s2)
+
+        best = s1 if fs1 > fs2 else s2 # Best individual for this iteration
+
+        child = cross_over (s1, s2)
+        child = mutate (child, mutation_percentage)
+
+        repair (ukp_obj_bin, child, OIndex)
+
+        # replace worst individual with child
+        if fs1 > fs2 :
+            s2 = child
+        else :
+            s1 = child
+
+        fsc = get_fitness_of(ukp_obj_bin, child)
+
+        # Replace best indivual with child if f(child) > f(best)
+        if fs1 > fs2 and fsc > fs1:
+            s1 = child
+        elif fs2 > fs1 and fsc > fs2:
+            s2 = child
+
+        time += 1
+
+    return best
+
+# This returns the list of object indices ordered by Pi/Wi
+def create_ordered_index(bukp_obj):
+    index_list = []
+    pw_list = []
+
+    # 10, [5, 6, 7, 8], [1, 2, 1, 3]
+    for i in range(0, len(bukp_obj.w)):
+        pw_list.append(int(bukp_obj.p[i]/bukp_obj.w[i]))
+
+    i = 0; n = len(pw_list)
+    while (i < n):
+        next = -1; nextIndex = -1
+        for j in range(0, n):
+            if pw_list[j] != -1 and pw_list[j] > next:
+                next = pw_list[j]
+                nextIndex = j
+
+        rep = int(bukp_obj.capacity/bukp_obj.w[nextIndex])
+        for k in range(0, rep):
+            index_list.append(nextIndex + k)
+            pw_list[nextIndex + k] = -1
+
+        i += rep
+
+    return index_list
+
+# Calculates solution vector total weight
+def get_sv_weight(bukp_obj, sv):
+    i = 0; m = 0; k = -1;
+    weight = 0
+
+    while (i < len(bukp_obj.w)):
+        k += 1
+        m += bukp_obj.rep[k]
+        while (i < m):
+            weight += bukp_obj.w[m - bukp_obj.rep[k]] * sv[i]
+            i += 1
+
+    return weight
+
+def get_fitness_of(bukp_obj, sv):
+    i = 0; m = 0; k = -1;
+    fitness = 0
+
+    while (i < len(bukp_obj.w)):
+        k += 1
+        m += bukp_obj.rep[k]
+        while (i < m):
+            fitness += bukp_obj.p[m - bukp_obj.rep[k]] * sv[i]
+            i += 1
+
+    return fitness
+
+def generate_random_population(ukp_obj):
+    l = len(ukp_obj.w)
+    vect = [0] * l
+    available = []
+
+    for i in range(0, l):
+        available.append(i)
+
+    R = 0
+    robj = randrange(len (available))
+    available.pop(robj)
+
+    while R + ukp_obj.w[robj] < ukp_obj.capacity:
+        vect[robj] = 1
+        R += ukp_obj.w[robj]
+        robj = randrange(len(available))
+        available.pop(robj)
+
+    return vect
+
+# A new child is born here
+def cross_over(father, mother):
+    child  = [0] * len(father)
+
+    for i in range(0, len(father)):
+        if randrange(0, 2) == 0 :
+            child[i] = father[i]
+        else :
+            child[i] = mother[i]
+
+    return child
+
+def mutate(child, percentage):
+    # Mutate 20% of the genome
+    mutations = int(len(child)*percentage)
+
+    for i in range(0, mutations):
+        chromosome = randrange(0, len(child))
+        child[chromosome] = 1 - child[chromosome] # 0 becomes 1 and 1 becomes 0
+
+    return child
+
+# Genetic mutation may result in deformation so
+# the individual must be repaired
+def repair(bukp_obj, child, OIndex):
+    R = get_sv_weight(bukp_obj, child)
+
+    # Nothing to repair
+    if R <= bukp_obj.capacity:
+        return child
+
+    # Drop phase
+    for i in range (0, len(OIndex)):
+        j = OIndex[len(OIndex) - i - 1]
+        if child[j] == 1 :
+            if R > bukp_obj.capacity :
+                child[j] = 0
+                R -= bukp_obj.w[j]
+
+    # Add phase
+    for i in range(0, len(OIndex)):
+        j = OIndex[i]
+        if child[j] == 0:
+            if R + bukp_obj.w[j] < bukp_obj.capacity:
+                child[j] = 1
+                R += bukp_obj.w[j]
+
+    return child
+
+def ukp_binarize(ukp_obj):
+    bin_obj = ukp(0, [], [])
+    bin_obj.capacity = ukp_obj.capacity
+
+    for i in range(0, len(ukp_obj.w)):
+        hmt = int(ukp_obj.capacity/ukp_obj.w[i]) # How many times ?
+        bin_obj.rep.insert(i, hmt)
+        for j in range(0, hmt): # Insert element i #hmt times
+            bin_obj.w.append(ukp_obj.w[i])
+            bin_obj.p.append(ukp_obj.p[i])
+
+    return bin_obj
+
+# This us actually a O(n) algorithm, it just looks too complex
+def ukp_debinarize_solution (ukp_obj, sv):
+    ukp_sol_o = ukp_solution()
+    i = 0; m = 0; k = -1;
+
+    while (i < len(ukp_obj.w)):
+        k += 1
+        m += ukp_obj.rep[k]
+        while (i < m):
+            if sv[i] == 1:
+                ukp_select_object (ukp_sol_o, k)
+                ukp_sol_o.total += ukp_obj.p[m - ukp_obj.rep[k]]
+                ukp_sol_o.tw += ukp_obj.w[m - ukp_obj.rep[k]]
+            i += 1
+
+    return ukp_sol_o
+
+############################# End of Genetic Algorithm #############################
 
 def execute_instance(type, ukp_o):
     start = time.localtime()
@@ -169,8 +374,16 @@ def execute_instance(type, ukp_o):
         print(str(solution.taken[i]) + ":" + str(solution.ttimes[i]))
 
 
-# main
-instance = ukp(10, [5, 6, 7, 8], [9,4, 5, 6])
+def main():
+    # (c, p, w)
+    instance = ukp(10, [5, 6, 7, 8], [1, 2, 1, 3])
 
-#execute_instance("ukp_dno", instance)
-execute_instance("ukp_wo", instance)
+    #execute_instance("ukp_dno", instance)
+    #execute_instance("ukp_wo", instance)
+
+    best = ukp_ga(instance, 10, 0.20)
+    sol = ukp_debinarize_solution(ukp_binarize(instance), best)
+
+    print ("ok")
+
+main()
