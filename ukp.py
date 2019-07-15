@@ -1,5 +1,7 @@
 import sys
-import time
+import os
+from timeit import default_timer as timer
+from datetime import timedelta
 from random import randrange
 
 #class objet
@@ -70,7 +72,6 @@ def ukp_dno(ukp_obj):
     #     print (str(twin.obj) + ":" + str(twin.row))
 
     current_capacity = ukp_obj.capacity
-    total_profit = 0
     current_obj_i = 0
     current_obj = twins[current_obj_i].obj
     cont = True
@@ -79,7 +80,8 @@ def ukp_dno(ukp_obj):
 
     while current_capacity > 0 and cont:
         if (ukp_obj.w[current_obj] > current_capacity):
-            if ++current_obj_i < len(ukp_obj.p):
+            current_obj_i += 1
+            if current_obj_i < len(ukp_obj.p):
                 current_obj = twins[current_obj_i].obj
             else:
                 cont = False
@@ -87,6 +89,8 @@ def ukp_dno(ukp_obj):
 
         ukp_select_object(ukp_sol_o, current_obj)
         ukp_sol_o.total += ukp_obj.p[current_obj]
+        ukp_sol_o.tw += ukp_obj.w[current_obj]
+
         current_capacity -= ukp_obj.w[current_obj]
 
     return ukp_sol_o
@@ -94,7 +98,7 @@ def ukp_dno(ukp_obj):
 ############################# End of Density Oredered Heuristic #############################
 
 
-############################# Total Oredered Heuristic #############################
+############################# Total-value Oredered Heuristic #############################
 
 # total value heuristic
 def ukp_tv(ukp_object):
@@ -107,7 +111,6 @@ def ukp_tv(ukp_object):
     while (cc > 0 and len(rem_objects) > 0):
         max_metric = 0; selected = -1
         for object in rem_objects:
-            print(rem_objects)
             metric = ukp_object.p[object] * int(cc/ukp_object.w[object])
             if metric > max_metric:
                 max_metric = metric
@@ -119,6 +122,7 @@ def ukp_tv(ukp_object):
 
         ukp_select_object(ukp_sol_o, selected)
         ukp_sol_o.total += ukp_object.p[selected]
+        ukp_sol_o.tw += ukp_object.w[selected]
         rem_objects.remove(selected)
 
     return ukp_sol_o
@@ -148,6 +152,7 @@ def ukp_wo(ukp_object):
         if ukp_object.w[index[i]] < cc:
             ukp_select_object(ukp_sol_o, index[i])
             ukp_sol_o.total += ukp_object.p[index[i]]
+            ukp_sol_o.tw += ukp_object.w[index[i]]
             cc -= ukp_object.w[index[i]]
         else:
             i = i+1
@@ -155,20 +160,17 @@ def ukp_wo(ukp_object):
 
 ############################# End of Weight Oredered Heuristic #############################
 
-
 ############################# Genetic Algorithm #############################
 
-def ukp_ga(ukp_obj, times, mutation_percentage):
-
-    ukp_obj_bin = ukp_binarize(ukp_obj)
+def ukp_ga(ukp_obj, ukp_obj_bin, generations, mutation_percentage):
 
     OIndex = create_ordered_index(ukp_obj_bin)
 
     s1 = generate_random_population (ukp_obj_bin)
     s2 = generate_random_population (ukp_obj_bin)
 
-    time = 0
-    while time < times :
+    generation = 0
+    while generation < generations :
 
         fs1 = get_fitness_of(ukp_obj_bin, s1)
         fs2 = get_fitness_of(ukp_obj_bin, s2)
@@ -194,7 +196,7 @@ def ukp_ga(ukp_obj, times, mutation_percentage):
         elif fs2 > fs1 and fsc > fs2:
             s2 = child
 
-        time += 1
+        generation += 1
 
     return best
 
@@ -336,7 +338,7 @@ def ukp_binarize(ukp_obj):
 # This us actually a O(n) algorithm, it just looks too complex
 def ukp_debinarize_solution (ukp_obj, sv):
     ukp_sol_o = ukp_solution()
-    i = 0; m = 0; k = -1;
+    i = 0; m = 0; k = -1
 
     while (i < len(ukp_obj.w)):
         k += 1
@@ -352,38 +354,86 @@ def ukp_debinarize_solution (ukp_obj, sv):
 
 ############################# End of Genetic Algorithm #############################
 
-def execute_instance(type, ukp_o):
-    start = time.localtime()
+def read_benchmark_instance(path):
+    ukp_obj = ukp(0, [], [])
+
+    try :
+        f = open(path, "r")
+    except IOError:
+        return -1
+
+    state = 0 # Data read phase not yet
+
+    for line in f:
+        s = line.split()
+        if len(s) > 1:
+            if s[0] == "n:":
+                n = int(s[1])
+            elif s[0] == "c:":
+                ukp_obj.capacity = int(s[1])
+            elif s[0] == "begin" :
+                state = 1 # Begin data read phase
+            elif s[0] == "end" :
+                break # End data read phase
+            elif state == 1:
+                ukp_obj.w.append(int(s[0]))
+                ukp_obj.p.append(int(s[1]))
+
+    return ukp_obj
+
+# (type, ukp_obj, ...)
+def execute_instance(*k):
+    type = k[0]
+    ukp_o = k[1]
+    start = timer()
 
     if type == "ukp_dno":
         solution = ukp_dno(ukp_o)
+
     elif type == "ukp_tv":
         solution = ukp_tv(ukp_o)
-    elif type =="ukp_wo":
+
+    elif type == "ukp_wo":
        solution = ukp_wo(ukp_o)
+
+    # (type, ukp_obj, generations, mutation)
+    elif type == "ukp_ga":
+        ukp_o_bin = ukp_binarize(ukp_o)
+        selected = ukp_ga(ukp_o, ukp_o_bin, k[2], k[3])
+        solution = ukp_debinarize_solution(ukp_o_bin, selected)
+
     else:
         return
 
-    end = time.localtime()
+    end = timer()
 
     print (type)
-    print ("Executed in " + str(end.tm_sec - start.tm_sec) + " secs")
+    print ("Executed in " + str(timedelta(seconds=end - start)))
     print ("Total profit = " + str(solution.total))
-    print ("chosen objects:times")
-    for i in range(0, len(solution.taken)):
-        print(str(solution.taken[i]) + ":" + str(solution.ttimes[i]))
+    print ("Total weight = " + str(solution.tw))
 
+    return
+
+########################### Parameter definition ##########################
+
+class GA_PARAMETERS:
+    GENERATIONS = 1000
+    MUTATION_RATIO = 0.10
 
 def main():
-    # (c, p, w)
-    instance = ukp(10, [5, 6, 7, 8], [1, 2, 1, 3])
 
-    #execute_instance("ukp_dno", instance)
-    #execute_instance("ukp_wo", instance)
+    path = "/home/afr0ck/PycharmProjects/ukp/assets/upk/generated/10.ukp"
+    ukp_obj = read_benchmark_instance(path)
 
-    best = ukp_ga(instance, 10, 0.20)
-    sol = ukp_debinarize_solution(ukp_binarize(instance), best)
+    print ("Benchmarking " + os.path.basename(path) + \
+           ": N=" + str(len(ukp_obj.p)) + " C=" + str(ukp_obj.capacity))
 
-    print ("ok")
+    execute_instance("ukp_wo", ukp_obj)
+    execute_instance("ukp_dno", ukp_obj)
+    execute_instance("ukp_tv", ukp_obj)
+    execute_instance("ukp_ga", ukp_obj, GA_PARAMETERS.GENERATIONS, GA_PARAMETERS.MUTATION_RATIO)
 
 main()
+
+# # (c, p, w)
+    # instance = ukp(10, [5, 6, 7, 8], [1, 2, 1, 3])
