@@ -414,6 +414,23 @@ def execute_instance(*k):
 
     return
 
+def do_benchmark(file):
+    ukp_obj = read_benchmark_instance(file)
+
+    print("Benchmarking " + os.path.basename(file) + \
+          ": N=" + str(len(ukp_obj.p)) + " C=" + str(ukp_obj.capacity))
+
+    execute_instance("ukp_wo", ukp_obj)
+    execute_instance("ukp_dno", ukp_obj)
+    execute_instance("ukp_tv", ukp_obj)
+    execute_instance("ukp_ga", ukp_obj, GA_PARAMETERS.GENERATIONS, GA_PARAMETERS.MUTATION_RATIO)
+
+def run_bechmarks(path):
+    for r, d, f in os.walk(path):
+        for file in f:
+            do_benchmark(os.path.join(r, file))
+            print ()
+
 ########################### Parameter definition ##########################
 
 class GA_PARAMETERS:
@@ -421,17 +438,14 @@ class GA_PARAMETERS:
     MUTATION_RATIO = 0.10
 
 def main():
+    assets = [
+        {"desc":"Generated assets", "path":"assets/upk/generated/"},
+        {"desc":"EDUK2000", "path":"assets/upk/EDUK2000"}
+    ]
 
-    path = "/home/afr0ck/PycharmProjects/ukp/assets/upk/generated/10.ukp"
-    ukp_obj = read_benchmark_instance(path)
-
-    print ("Benchmarking " + os.path.basename(path) + \
-           ": N=" + str(len(ukp_obj.p)) + " C=" + str(ukp_obj.capacity))
-
-    execute_instance("ukp_wo", ukp_obj)
-    execute_instance("ukp_dno", ukp_obj)
-    execute_instance("ukp_tv", ukp_obj)
-    execute_instance("ukp_ga", ukp_obj, GA_PARAMETERS.GENERATIONS, GA_PARAMETERS.MUTATION_RATIO)
+    for asset in assets:
+        print ("Trying on " + asset["desc"])
+        run_bechmarks(asset["path"])
 
 main()
 
