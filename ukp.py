@@ -405,14 +405,14 @@ def execute_instance(*k):
     else:
         return
 
-    end = timer()
+    time = str(timedelta(seconds=timer() - start))
 
     print (type)
-    print ("Executed in " + str(timedelta(seconds=end - start)))
+    print ("Executed in " + time)
     print ("Total profit = " + str(solution.total))
     print ("Total weight = " + str(solution.tw))
 
-    return solution
+    return {"sol":solution, "time":time}
 
 def do_benchmark(file):
     ukp_obj = read_benchmark_instance(file)
@@ -447,7 +447,7 @@ def main():
         print ("Trying on " + asset["desc"])
         run_bechmarks(asset["path"])
 
-main()
+#main()
 
 # # (c, p, w)
     # instance = ukp(10, [5, 6, 7, 8], [1, 2, 1, 3])
