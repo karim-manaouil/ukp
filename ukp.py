@@ -1,8 +1,12 @@
 import sys
 import os
+import subprocess
 from timeit import default_timer as timer
 from datetime import timedelta
 from random import randrange
+
+# Some dirty hack:
+global_fhandle = 0
 
 #class objet
 class objet:
@@ -397,7 +401,7 @@ def execute_instance(*k):
        solution = ukp_wo(ukp_o)
 
     # (type, ukp_obj, generations, mutation)
-    elif type == "ukp_ga":
+    elif "ukp_ga" in type:
         ukp_o_bin = ukp_binarize(ukp_o)
         selected = ukp_ga(ukp_o, ukp_o_bin, k[2], k[3])
         solution = ukp_debinarize_solution(ukp_o_bin, selected)
@@ -407,29 +411,42 @@ def execute_instance(*k):
 
     time = str(timedelta(seconds=timer() - start))
 
-    print (type)
-    print ("Executed in " + time)
-    print ("Total profit = " + str(solution.total))
-    print ("Total weight = " + str(solution.tw))
+    global global_fhandle
+
+    if global_fhandle != 0:
+        global_fhandle.write(type + ',' + time + ',' + str(solution.total) + ',' + str(solution.tw) + '\n')
+
+    #print (type + ',' + time + ',' + str(solution.total) + ',' + str(solution.tw))
 
     return {"sol":solution, "time":time}
 
-def do_benchmark(file):
+def do_benchmark(file, fhandle):
     ukp_obj = read_benchmark_instance(file)
 
-    print("Benchmarking " + os.path.basename(file) + \
-          ": N=" + str(len(ukp_obj.p)) + " C=" + str(ukp_obj.capacity))
+    global  global_fhandle
+    global_fhandle = fhandle
+
+    # fhandle.write("Benchmarking " + os.path.basename(file) + \
+    #       ": N=" + str(len(ukp_obj.p)) + " C=" + str(ukp_obj.capacity) + "\n")
+
+    fhandle.write("type,time,value,weight\n")
 
     execute_instance("ukp_wo", ukp_obj)
     execute_instance("ukp_dno", ukp_obj)
     execute_instance("ukp_tv", ukp_obj)
-    execute_instance("ukp_ga", ukp_obj, GA_PARAMETERS.GENERATIONS, GA_PARAMETERS.MUTATION_RATIO)
+    execute_instance("ukp_ga.10.20", ukp_obj, 10, 0.20)
+    execute_instance("ukp_ga.100.20", ukp_obj, 100, 0.20)
+    execute_instance("ukp_ga.1000.20", ukp_obj, 1000, 0.20)
+    execute_instance("ukp_ga.100.60", ukp_obj, 100, 0.60)
+    execute_instance("ukp_ga.1000.60", ukp_obj, 1000, 0.60)
+    execute_instance("ukp_ga.1000.10", ukp_obj, 1000, 0.10)
 
-def run_bechmarks(path):
+def run_bechmarks(path, tmp):
     for r, d, f in os.walk(path):
         for file in f:
-            do_benchmark(os.path.join(r, file))
-            print ()
+            fhandle = open(os.path.join(tmp, file), "w+")
+            do_benchmark(os.path.join(r, file), fhandle)
+            fhandle.close()
 
 ########################### Parameter definition ##########################
 
@@ -443,11 +460,18 @@ def main():
         {"desc":"EDUK2000", "path":"assets/upk/EDUK2000"}
     ]
 
-    for asset in assets:
-        print ("Trying on " + asset["desc"])
-        run_bechmarks(asset["path"])
+    folder = "ukp_run"
 
-#main()
+    try :
+        subprocess.run(["rm","-rf",folder])
+        os.mkdir(folder)
+    except :
+        return -1
+
+    for asset in assets:
+        run_bechmarks(asset["path"], folder)
+
+main()
 
 # # (c, p, w)
     # instance = ukp(10, [5, 6, 7, 8], [1, 2, 1, 3])
