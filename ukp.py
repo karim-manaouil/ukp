@@ -137,7 +137,7 @@ def ukp_tv(ukp_object):
 def ukp_wo(ukp_object):
     ukp_object.validate()
     cc = ukp_object.capacity # left capacity in each iteration
-    temp = ukp_object.w.copy()
+    temp = list(ukp_object.w)
     index = list(range(0, len(ukp_object.p)))  # index des objets trie
     #ordonner l index du tableau
     ukp_sol_o = ukp_solution()
@@ -412,7 +412,7 @@ def execute_instance(*k):
     print ("Total profit = " + str(solution.total))
     print ("Total weight = " + str(solution.tw))
 
-    return
+    return solution
 
 def do_benchmark(file):
     ukp_obj = read_benchmark_instance(file)
