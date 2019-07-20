@@ -8,14 +8,6 @@ from random import randrange
 # Some dirty hack:
 global_fhandle = 0
 
-#class objet
-class objet:
-    profit = 0
-    weight = 0
-    def __init__(self, profit, weight):
-        self.weight = weight
-        self.profit = profit
-
 # This is the class that contains the information
 # of an instance : capacity, weights list and profits list
 
