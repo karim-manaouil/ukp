@@ -50,9 +50,6 @@ class ukp_solution:
 def ukp_select_object (ukp_solution_o, object):
     ukp_solution_o.taken.append(object)
 
-
-############################# Density Oredered Heuristic #############################
-
 # Density ordered heuristic, it takes a ukp object as parameter
 # and return a ukp_solution
 def ukp_dno(ukp_obj):
@@ -91,11 +88,6 @@ def ukp_dno(ukp_obj):
 
     return ukp_sol_o
 
-############################# End of Density Oredered Heuristic #############################
-
-
-############################# Total-value Oredered Heuristic #############################
-
 # total value heuristic
 def ukp_tv(ukp_object):
     ukp_object.validate()
@@ -123,12 +115,6 @@ def ukp_tv(ukp_object):
 
     return ukp_sol_o
 
-
-############################# End of Total Oredered Heuristic #############################
-
-
-############################# Weight Oredered Heuristic #############################
-
 # Weight-Ordered heuristic solution
 def ukp_wo(ukp_object):
     ukp_object.validate()
@@ -153,10 +139,6 @@ def ukp_wo(ukp_object):
         else:
             i = i+1
     return ukp_sol_o
-
-############################# End of Weight Oredered Heuristic #############################
-
-############################# Genetic Algorithm #############################
 
 def ukp_ga(ukp_obj, ukp_obj_bin, generations, mutation_percentage):
 
@@ -348,15 +330,6 @@ def ukp_debinarize_solution (ukp_obj, sv):
 
     return ukp_sol_o
 
-############################# End of Genetic Algorithm #############################
-
-
-
-
-
-
-############################# simulated annealing algorithme #######################
-# coding: utf-8
 
 import math
 import random
@@ -452,10 +425,6 @@ def simulate(solution, weight_cost, max_weight, init_temp, steps):
         if current_cost >= best_cost or temperature <= 0:
             break
     return best_cost, best
-
-
-######################## end of simulated annealing algorithme ####################
-
 
 
 def read_benchmark_instance(path):
